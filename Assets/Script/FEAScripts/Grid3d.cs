@@ -5,6 +5,8 @@ using BriefFiniteElementNet;
 using System.Diagnostics;
 using Debug = UnityEngine.Debug;
 
+public enum Normal { X, Y, Z };
+
 public class Grid3d
 {
     public Voxel[,,] Voxels;
@@ -12,12 +14,12 @@ public class Grid3d
     public List<Face> Faces;
     public List<Edge> Edges;
 
-
     public Vector3Int Size;
     public float VoxelSize;
     public Vector3 Corner;
     public IEnumerable<MeshCollider> Voids;
     public Mesh[] Mesh;
+
     public List<Vector3> activeCenter = new List<Vector3>();
 
     private float _displacement = 0;
@@ -65,78 +67,6 @@ public class Grid3d
                     Voxels[x, y, z] = new Voxel(new Vector3Int(x, y, z), this);
                 }
 
-        // make faces
-        Faces = new List<Face>();
-
-        for (int z = 0; z < Size.z; z++)
-            for (int y = 0; y < Size.y; y++)
-                for (int x = 0; x < Size.x + 1; x++)
-                {
-                    var center = Corner + new Vector3(x, y+0.5f, z + 0.5f) * VoxelSize;
-                    var left = x == 0 ? null : Voxels[x - 1, y, z];
-                    var right = x == Size.x ? null : Voxels[x, y, z];
-                    Faces.Add(new Face(center, Normal.X, left, right));
-                }
-
-        for (int z = 0; z < Size.z; z++)
-            for (int y = 0; y < Size.y + 1; y++)
-                for (int x = 0; x < Size.x; x++)
-                {
-                    var center = Corner + new Vector3(x + 0.5f, y, z + 0.5f) * VoxelSize;
-                    var down = y == 0 ? null : Voxels[x, y - 1, z];
-                    var top = y == Size.y ? null : Voxels[x, y, z];
-                    Faces.Add(new Face(center, Normal.Y, down, top));
-                }
-
-        for (int z = 0; z < Size.z + 1; z++)
-            for (int y = 0; y < Size.y; y++)
-                for (int x = 0; x < Size.x; x++)
-                {
-                    var center = Corner + new Vector3(x + 0.5f, y + 0.5f, z) * VoxelSize;
-                    var back = z == 0 ? null : Voxels[x, y, z - 1];
-                    var forward = z == Size.z ? null : Voxels[x, y, z];
-                    Faces.Add(new Face(center, Normal.Z, back, forward));
-                }
-
-        // make edges
-        Edges = new List<Edge>();
-
-        for (int z = 0; z < Size.z; z++)
-            for (int y = 0; y < Size.y + 1; y++)
-                for (int x = 0; x < Size.x + 1; x++)
-                {
-                    var leftBottom = (x == 0 || y == 0) ? null : Voxels[x - 1, y - 1, z];
-                    var rightBottom = (x == Size.x || y == 0) ? null : Voxels[x, y - 1, z];
-                    var leftTop = (x == 0 || y == Size.y) ? null : Voxels[x - 1, y, z];
-                    var rightTop = (x == Size.x || y == Size.y) ? null : Voxels[x, y, z];
-
-                    Edges.Add(new Edge(Normal.X, leftBottom, rightBottom, leftTop, rightTop));
-                }
-
-        for (int z = 0; z < Size.z + 1; z++)
-            for (int y = 0; y < Size.y + 1; y++)
-                for (int x = 0; x < Size.x; x++)
-                {
-                    var leftBottom = (z == 0 || y == 0) ? null : Voxels[x, y - 1, z - 1];
-                    var rightBottom = (z == Size.z || y == 0) ? null : Voxels[x, y - 1, z];
-                    var leftTop = (z == 0 || y == Size.y) ? null : Voxels[x, y, z - 1];
-                    var rightTop = (z == Size.z || y == Size.y) ? null : Voxels[x, y, z];
-
-                    Edges.Add(new Edge(Normal.X, leftBottom, rightBottom, leftTop, rightTop));
-                }
-
-        for (int z = 0; z < Size.z + 1; z++)
-            for (int y = 0; y < Size.y; y++)
-                for (int x = 0; x < Size.x + 1; x++)
-                {
-                    var leftBottom = (x == 0 || z == 0) ? null : Voxels[x - 1, y, z - 1];
-                    var rightBottom = (x == Size.x || z == 0) ? null : Voxels[x, y, z - 1];
-                    var leftTop = (x == 0 || z == Size.z) ? null : Voxels[x - 1, y, z];
-                    var rightTop = (x == Size.x || z == Size.z) ? null : Voxels[x, y, z];
-
-                    Edges.Add(new Edge(Normal.X, leftBottom, rightBottom, leftTop, rightTop));
-                }
-
         // make corners
         Corners = new Corner[Size.x + 1, Size.y + 1, Size.z + 1];
 
@@ -147,17 +77,65 @@ public class Grid3d
                     Corners[x, y, z] = new Corner(new Vector3Int(x, y, z), this);
                 }
 
+        // make faces
+        Faces = new List<Face>();
+
+        for (int z = 0; z < Size.z; z++)
+            for (int y = 0; y < Size.y; y++)
+                for (int x = 0; x < Size.x + 1; x++)
+                {
+                    Faces.Add(new Face(x, y, z, Normal.X, this));
+                }
+
+        for (int z = 0; z < Size.z; z++)
+            for (int y = 0; y < Size.y + 1; y++)
+                for (int x = 0; x < Size.x; x++)
+                {
+                    Faces.Add(new Face(x, y, z, Normal.Y, this));
+                }
+
+        for (int z = 0; z < Size.z + 1; z++)
+            for (int y = 0; y < Size.y; y++)
+                for (int x = 0; x < Size.x; x++)
+                {
+                    Faces.Add(new Face(x, y, z, Normal.Z, this));
+                }
+
+        // make edges
+        Edges = new List<Edge>();
+
+        for (int z = 0; z < Size.z; z++)
+            for (int y = 0; y < Size.y + 1; y++)
+                for (int x = 0; x < Size.x + 1; x++)
+                {
+                    Edges.Add(new Edge(x, y, z, Normal.Z, this));
+                }
+
+        for (int z = 0; z < Size.z + 1; z++)
+            for (int y = 0; y < Size.y + 1; y++)
+                for (int x = 0; x < Size.x; x++)
+                {
+                    Edges.Add(new Edge(x, y, z, Normal.X, this));
+                }
+
+        for (int z = 0; z < Size.z + 1; z++)
+            for (int y = 0; y < Size.y; y++)
+                for (int x = 0; x < Size.x + 1; x++)
+                {
+                    Edges.Add(new Edge(x, y, z, Normal.Y, this));
+                }
+
         // calculate
-        Analysis();
+        //Analysis();
 
         Debug.Log($"Time to generate grid: {watch.ElapsedMilliseconds} ms");
     }
 
-    IEnumerable<Voxel> GetVoxels()
+    public IEnumerable<Voxel> GetVoxels()
     {
         for (int z = 0; z < Size.z; z++)
-            for (int x = 0; x < Size.x; x++)
-                for (int y = 0; y < Size.y; y++)
+            for (int y = 0; y < Size.y; y++)
+                for (int x = 0; x < Size.x; x++)
                 {
                     yield return Voxels[x, y, z];
                 }
@@ -185,18 +163,6 @@ public class Grid3d
 
         model.Solve();
 
-        //var activeVoxels = GetVoxels().Where(b => b.IsActive).ToArray();
-
-        //int i = 0;
-        //foreach(var element in elements)
-        //{
-        //    var tensor = element.GetInternalForce(LoadCombination.DefaultLoadCombination);
-        //    var c = new[] { tensor.S11, tensor.S12, tensor.S13, tensor.S21, tensor.S22, tensor.S23, tensor.S31, tensor.S32, tensor.S33};
-        //    var stress = c.Max();
-        //    var index = i / 5;
-        //    activeVoxels[index].Value += (float)stress;
-        //}
-
         // analysis results
         foreach (var node in nodes)
         {
@@ -215,14 +181,12 @@ public class Grid3d
 
         foreach (var voxel in activeVoxels)
             voxel.Value /= voxel.GetCorners().Count();
-        //
 
         var min = activeVoxels.Min(v => v.Value);
         var max = activeVoxels.Max(v => v.Value);
 
         foreach (var voxel in activeVoxels)
             voxel.Value = Mathf.InverseLerp(min, max, voxel.Value);
-
     }
 
     public void MakeMesh()
@@ -252,5 +216,4 @@ public class Grid3d
 
         }
     }
-
 }

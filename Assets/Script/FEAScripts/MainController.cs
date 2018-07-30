@@ -17,10 +17,10 @@ public class MainController : MonoBehaviour
     GameObject _voids;
     GameObject _boundary;
     GameObject _program;
-    //Coroutine _liveUpdate;
+    Coroutine _liveUpdate;
 
     bool _toggleVoids = false;
-    //bool _toggleUpdate = false;
+    bool _toggleUpdate = false;
     bool _toggleTransparency = true;
     float _displacement = 0f;
     string _voxelSize = "1.0";
@@ -54,15 +54,7 @@ public class MainController : MonoBehaviour
 
         //_voxelSize = GUI.TextField(new Rect(s * i++, 25, 100, 20), _voxelSize);
 
-        //if (_toggleUpdate != GUI.Toggle(new Rect(s * i++, 25, 100, 20), _toggleUpdate, "Auto update"))
-        //{
-        //    _toggleUpdate = !_toggleUpdate;
 
-        //    if (_toggleUpdate)
-        //        _liveUpdate = StartCoroutine(LiveUpdate());
-        //    else
-        //        StopCoroutine(_liveUpdate);
-        //}
 
         if (GUI.Button(new Rect(20, Screen.height - 120, 80, 80), analyseTexture))
         {
@@ -91,6 +83,16 @@ public class MainController : MonoBehaviour
 
         int i = 2;
         int s = 150;
+
+        if (_toggleUpdate != GUI.Toggle(new Rect(s * i++, Screen.height - 40, 100, 20), _toggleUpdate, "Auto update"))
+        {
+            _toggleUpdate = !_toggleUpdate;
+
+            if (_toggleUpdate)
+                _liveUpdate = StartCoroutine(LiveUpdate());
+            else
+                StopCoroutine(_liveUpdate);
+        }
 
         if (_toggleVoids != GUI.Toggle(new Rect(s * i++, Screen.height - 40, 100, 20), _toggleVoids, "Show voids"))
         {
@@ -138,17 +140,17 @@ public class MainController : MonoBehaviour
     void Update()
     {
         if (_grid == null) return;
-        _grid.DisplacementScale = _displacement;
+        //_grid.DisplacementScale = _displacement;
         //Drawing.DrawMesh(_toggleTransparency, _grid.Mesh);
 
-        foreach (var face in _grid.Faces)
+        foreach (var face in _grid.Faces.Where(f => f.IsClimbable))
         {
-            if (face.IsClimbable)
-                if (face.Center.y>0f)
-                Drawing.DrawFace(face.Center, face.Direction, _grid.VoxelSize);
+            if (face.Geometry == null)
+                face.Geometry = Drawing.MakeFace(face.Center, face.Direction, _grid.VoxelSize, 1);
+
+            Drawing.DrawMesh(false, face.Geometry);
         }
 
-        
     }
 
     IEnumerator LiveUpdate()
@@ -160,7 +162,8 @@ public class MainController : MonoBehaviour
         }
     }
 
-    public static int gridCount;
+    public static int gridCount;   
+
 
     void MakeGrid()
     {
