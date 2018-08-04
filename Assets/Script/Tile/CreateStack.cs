@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CreateRobot : MonoBehaviour
+public class CreateStack : MonoBehaviour
 {
     public GameObject pickingStack;    
 

@@ -108,7 +108,7 @@ public class AutoMovement : MonoBehaviour
             int h = 12/j;
             for (int i = 0; i < h; i++)
             {
-                int stackCount = CreateRobot._pickingStacks.Count;
+                int stackCount = CreateStack._pickingStacks.Count;
 
                 Vector3 targetPos;
 

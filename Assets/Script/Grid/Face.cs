@@ -11,7 +11,8 @@ public class Face
     public Voxel[] Voxels;
     public Vector3Int Index;
     public Vector3 Center;
-    public Normal Direction;
+    public Axis Direction;
+    public Vector3 Normal;
     //public float NormalizedDistance = 0f;
     public Mesh Geometry;
 
@@ -19,17 +20,21 @@ public class Face
     // public FrameElement2Node Frame;
 
     public bool IsActive => Voxels.Count(v => v != null && v.IsActive) == 2;
+    public bool IsUsed;
+    public bool IsOccupied;
 
     public bool IsClimbable
     {
         get
         {
-            if (Index.y == 0 && Direction == Normal.Y) return false;
+            if (Index.y == 0 && Direction == Axis.Y) return false;
             return Voxels.Count(v => v != null && v.IsActive) == 1;
         }
     }
 
-    public Face(int x, int y, int z, Normal direction, Grid3d grid)
+
+
+    public Face(int x, int y, int z, Axis direction, Grid3d grid)
     {
         _grid = grid;
         Index = new Vector3Int(x, y, z);
@@ -40,7 +45,7 @@ public class Face
             v.Faces.Add(this);
 
         Center = GetCenter();
-
+        Normal = GetNormal();
         // var center = Corner + new Vector3(x, y+0.5f, z + 0.5f) * VoxelSize;
 
         //Frame = new FrameElement2Node(start, end)
@@ -63,11 +68,11 @@ public class Face
 
         switch (Direction)
         {
-            case Normal.X:
+            case Axis.X:
                 return _grid.Corner + new Vector3(x, y + 0.5f, z + 0.5f) * _grid.VoxelSize;
-            case Normal.Y:
+            case Axis.Y:
                 return _grid.Corner + new Vector3(x + 0.5f, y, z + 0.5f) * _grid.VoxelSize;
-            case Normal.Z:
+            case Axis.Z:
                 return _grid.Corner + new Vector3(x + 0.5f, y + 0.5f, z) * _grid.VoxelSize;
             default:
                 throw new Exception("Wrong direction.");
@@ -82,24 +87,45 @@ public class Face
 
         switch (Direction)
         {
-            case Normal.X:
+            case Axis.X:
                 return new[]
                 {
                    x == 0 ? null : _grid.Voxels[x - 1, y, z],
                    x == _grid.Size.x ? null : _grid.Voxels[x, y, z]
                 };
-            case Normal.Y:
+            case Axis.Y:
                 return new[]
                 {
                    y == 0 ? null : _grid.Voxels[x, y - 1, z],
                    y == _grid.Size.y ? null : _grid.Voxels[x, y, z]
                 };
-            case Normal.Z:
+            case Axis.Z:
                 return new[]
                 {
                    z == 0 ? null : _grid.Voxels[x, y, z - 1],
                    z == _grid.Size.z ? null : _grid.Voxels[x, y, z]
                  };
+            default:
+                throw new Exception("Wrong direction.");
+        }
+    }
+
+    Vector3 GetNormal()
+    {
+        int x = Index.x;
+        int y = Index.y;
+        int z = Index.z;
+
+        bool left = Voxels[0] != null && Voxels[0].IsActive;
+
+        switch (Direction)
+        {
+            case Axis.X:
+             return left ? Vector3.right : -Vector3.right; 
+            case Axis.Y:
+                return left ? Vector3.up : -Vector3.up;
+            case Axis.Z:
+             return left ? Vector3.forward : -Vector3.forward;
             default:
                 throw new Exception("Wrong direction.");
         }

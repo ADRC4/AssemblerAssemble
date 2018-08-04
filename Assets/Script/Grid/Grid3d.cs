@@ -5,7 +5,7 @@ using BriefFiniteElementNet;
 using System.Diagnostics;
 using Debug = UnityEngine.Debug;
 
-public enum Normal { X, Y, Z };
+public enum Axis { X, Y, Z };
 
 public class Grid3d
 {
@@ -84,21 +84,21 @@ public class Grid3d
             for (int y = 0; y < Size.y; y++)
                 for (int x = 0; x < Size.x + 1; x++)
                 {
-                    Faces.Add(new Face(x, y, z, Normal.X, this));
+                    Faces.Add(new Face(x, y, z, Axis.X, this));
                 }
 
         for (int z = 0; z < Size.z; z++)
             for (int y = 0; y < Size.y + 1; y++)
                 for (int x = 0; x < Size.x; x++)
                 {
-                    Faces.Add(new Face(x, y, z, Normal.Y, this));
+                    Faces.Add(new Face(x, y, z, Axis.Y, this));
                 }
 
         for (int z = 0; z < Size.z + 1; z++)
             for (int y = 0; y < Size.y; y++)
                 for (int x = 0; x < Size.x; x++)
                 {
-                    Faces.Add(new Face(x, y, z, Normal.Z, this));
+                    Faces.Add(new Face(x, y, z, Axis.Z, this));
                 }
 
         // make edges
@@ -108,21 +108,21 @@ public class Grid3d
             for (int y = 0; y < Size.y + 1; y++)
                 for (int x = 0; x < Size.x + 1; x++)
                 {
-                    Edges.Add(new Edge(x, y, z, Normal.Z, this));
+                    Edges.Add(new Edge(x, y, z, Axis.Z, this));
                 }
 
         for (int z = 0; z < Size.z + 1; z++)
             for (int y = 0; y < Size.y + 1; y++)
                 for (int x = 0; x < Size.x; x++)
                 {
-                    Edges.Add(new Edge(x, y, z, Normal.X, this));
+                    Edges.Add(new Edge(x, y, z, Axis.X, this));
                 }
 
         for (int z = 0; z < Size.z + 1; z++)
             for (int y = 0; y < Size.y; y++)
                 for (int x = 0; x < Size.x + 1; x++)
                 {
-                    Edges.Add(new Edge(x, y, z, Normal.Y, this));
+                    Edges.Add(new Edge(x, y, z, Axis.Y, this));
                 }
 
         // calculate

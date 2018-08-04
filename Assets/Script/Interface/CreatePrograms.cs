@@ -123,8 +123,8 @@ public class CreatePrograms : MonoBehaviour
 
     void Update()
     {        
-        placeTileCount = CreateRobot.placeTileNumber;        
-        pickTileCount = (CreateRobot.pickTileNumber/2) *3;
+        placeTileCount = CreateStack.placeTileNumber;        
+        pickTileCount = (CreateStack.pickTileNumber/2) *3;
         pickRobotCount = AutoMovement._pickRobots.Count;
         jointList = placeTileCount*2;
 
