@@ -9,24 +9,19 @@ public class PathFinding : MonoBehaviour
 {
     Grid3d _grid = null;
     GameObject _voids;
-    bool _toggleVoids = true; 
-    bool _toggleUpdate = false;
+    bool _toggleVoids = true;
     string _voxelSize = "1.2";
-    Coroutine _liveUpdate;
-
-    [SerializeField]
-    GUISkin _skin;
 
     public GameObject robotPrefab;
     public GameObject tilePrefab;
+    public GameObject previewTilePrefab;
+
+    GameObject previewTile;
 
     Face start;
-    Face end;
+    List<Face> endFaceList = new List<Face>();
 
-    int startFace = 0;
-    int endFace = 300;
-
-
+    List<List<Vector3>> allPath = new List<List<Vector3>>();
     private void Awake()
     {
         _voids = GameObject.Find("Voids");
@@ -35,104 +30,105 @@ public class PathFinding : MonoBehaviour
 
     private void Start()
     {
-        MakeGrid();
+        previewTile = Instantiate(previewTilePrefab);
         ToggleVoids();
-        //SpawnTile();
+        StartCoroutine(MakeGrid());
     }
 
-
-    int actualFaces = 0;
-
+    bool buildMode;
     void Update()
     {
         if (_grid == null) return;
 
         //   Drawing.DrawMesh(false, _grid.Mesh);
 
+        if (allPath != null)
+            foreach (var path in allPath)
+                if (path != null)
+                    for (int i = 0; i < path.Count - 1; i++)
+                        Drawing.DrawRectangularBar(path[i], path[i + 1], 0.05f, 1);
+
+
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            actualFaces = 0;
             foreach (var face in _grid.Faces) face.IsUsed = false;
 
-            var startFaces = _grid.Faces.Where(f => f.Index.y == 0 && f.Index.z %2 ==0 && f.Index.x % 2 == 0 && f.IsClimbable);
-            var endFaces = _grid.Faces.Where(f => f.Center.y > 17.5f && Mathf.Abs(f.Center.x) < 1.5f && f.IsClimbable/* && !f.IsUsed*/);
+            var startFaces = _grid.Faces.Where(f => f.Index.y == 0 && f.Index.z % 2 == 0 && f.Index.x % 2 == 0 && f.IsClimbable);
+
+            var endFaces = _grid.Faces.Where(f => f.Center.y > 17.5f && Mathf.Abs(f.Center.x) < 1.5f && f.IsClimbable);
 
             foreach (var sf in startFaces)
             {
                 if (sf.IsUsed) continue;
+                sf.Geometry = Drawing.MakeFace(sf.Center, sf.Direction, _grid.VoxelSize, 0);
                 var ef = endFaces.OrderBy(endFace => Vector3.Distance(sf.Center, endFace.Center)).First();
+                ef.Geometry = Drawing.MakeFace(ef.Center, ef.Direction, _grid.VoxelSize, 0);
                 StartCoroutine(MoveRobot(sf, ef));
             }
-  
+
         }
 
-        if (Input.GetKey(KeyCode.Return))
+        if (Input.GetKeyDown(KeyCode.Return))
         {
             foreach (var face in _grid.Faces) face.IsUsed = false;
-            start = _grid.Faces.Where(f => f.IsClimbable).ToList()[startFace];
-            end = _grid.Faces.Where(f => f.IsClimbable).ToList()[endFace];
-            StartCoroutine(MoveRobot(start, end));
+            var startFaces = _grid.Faces.Where(f => f.Index.y == 0 && f.Index.z % 2 == 0 && f.Index.x % 2 == 0 && f.IsClimbable);
+            foreach (var end in endFaceList)
+            {
+                start = startFaces.OrderBy(sf => Vector3.Distance(sf.Center, end.Center)).First();
+                StartCoroutine(MoveRobot(start, end));
+            }
+            endFaceList.Clear();
         }
 
-        RaycastSelect();
-    }
-
-    IEnumerator LiveUpdate()
-    {
-        while (true)
+        if (Input.GetKeyDown(KeyCode.I))
         {
-            MakeGrid();
-            yield return new WaitForSeconds(2.0f);
+            this.GetComponent<MeshRenderer>().enabled = false;
+            StartCoroutine(SpawnTile());
         }
-    }
 
-    void OnGUI()
-    {
-        int i = 1;
-        int s = 25;
-        GUI.skin = _skin;
-
-        _voxelSize = GUI.TextField(new Rect(s, s * i++, 100, 20), _voxelSize);
-
-        startFace = Mathf.RoundToInt(GUI.HorizontalSlider(new Rect(s, s * i++, 200, 20), startFace, 0, 21));
-
-        endFace = Mathf.RoundToInt(GUI.HorizontalSlider(new Rect(s, s * i++, 200, 20), endFace, 50, 1000));
-
-        if (_toggleVoids != GUI.Toggle(new Rect(s, s * i++, 100, 20), _toggleVoids, "Show voids"))
+        if (Input.GetKeyDown(KeyCode.B))
         {
-            ToggleVoids();
+            buildMode = !buildMode;
         }
-
+        if (buildMode)
+        {
+            previewTile.GetComponent<Renderer>().enabled = true;
+            RaycastSelect();
+        }
+        else previewTile.GetComponent<Renderer>().enabled = false;
     }
 
     void RaycastSelect()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         var hit = new RaycastHit();
-        if (Input.GetMouseButtonDown(0))
+
+        var mask = LayerMask.GetMask("Void");
+
+        if (Physics.Raycast(ray, out hit, 300, mask))
         {
-            if (Physics.Raycast(ray, out hit, 300))
+
+            int faceIndex = hit.triangleIndex / 4;
+            var face = _grid.Faces.Where(f => f.IsClimbable).ElementAt(faceIndex);
+
+            var previewPos = face.Center + Vector3.Normalize(face.Normal) * 0.6f;
+            previewTile.transform.position = previewPos;
+
+            if (Input.GetMouseButtonDown(0))
             {
-                foreach (var face in _grid.Faces.Where(f => f.IsClimbable))
-                {
-                    if ((int)hit.point.x == (int)face.Center.x &&
-                        (int)hit.point.y == (int)face.Center.y &&
-                        (int)hit.point.z == (int)face.Center.z)
-                    {
-                        start = face;
-                        start.Geometry = Drawing.MakeFace(start.Center, start.Direction, _grid.VoxelSize, 0);
-                    }
-                }
+                var end = face;
+                endFaceList.Add(end);
+                Instantiate(previewTilePrefab, previewPos, Quaternion.identity);
             }
+
+
         }
     }
 
     UndirectedGraph<Face, TaggedEdge<Face, Edge>> graph;
     Mesh mesh;
-    List<Vector3> vertices = new List<Vector3>();
-    List<Vector3> meshVertices;
 
-    void MakeGrid()
+    IEnumerator MakeGrid()
     {
         // create grid with voids
         var colliders = _voids
@@ -148,48 +144,33 @@ public class PathFinding : MonoBehaviour
             indexFormat = UnityEngine.Rendering.IndexFormat.UInt32
         };
 
-        var meshes = new List<CombineInstance>();
+        var filter = GetComponent<MeshFilter>();//.mesh = mesh;
+        var collider = this.gameObject.AddComponent<MeshCollider>();
+        //   var meshes = new List<CombineInstance>();
 
         foreach (var face in _grid.Faces.Where(f => f.IsClimbable))
         {
+            float t = 0;
+
+            t = face.Voxels.First(v => v != null && v.IsActive).Value;
+            // t = Mathf.Clamp01(voxel.FirstOrDefault().Value);
+
             Mesh faceMesh;
-            faceMesh = Drawing.MakeFace(face.Center, face.Direction, _grid.VoxelSize, 0);
-            meshes.Add(new CombineInstance() { mesh = faceMesh });
+            faceMesh = Drawing.MakeFace(face.Center, face.Direction, _grid.VoxelSize, t);
+            //   meshes.Add(new CombineInstance() { mesh = faceMesh });
+
+            var subMesh = new Mesh()
+            {
+                indexFormat = UnityEngine.Rendering.IndexFormat.UInt32
+            };
+
+            var meshes = new[] { new CombineInstance() { mesh = mesh }, new CombineInstance() { mesh = faceMesh } };
+            subMesh.CombineMeshes(meshes, true, false, false);
+            mesh = subMesh;
+            filter.mesh = mesh;
+            collider.sharedMesh = mesh;
+            yield return null;
         }
-
-        mesh.CombineMeshes(meshes.ToArray(), true, false, false);
-        GetComponent<MeshFilter>().mesh = mesh;
-
-        meshVertices = new List<Vector3>(mesh.vertices);
-
-        //// draw a polyline for the start-end path
-        //{
-        //    IEnumerable<TaggedEdge<Face, Edge>> path;
-        //    if (shortest(end, out path))
-        //    {
-        //        var vertices = new List<Vector3>();                
-
-        //        var current = start;
-        //        vertices.Add(current.Center);
-
-        //        foreach (var edge in path)
-        //        {
-        //            vertices.Add(edge.Tag.Center);
-        //            current = edge.GetOtherVertex(current);
-        //            vertices.Add(current.Center);
-        //        }
-
-        //        int vertexCount = mesh.vertexCount;
-        //        var meshVertices = new List<Vector3>(mesh.vertices);
-        //        meshVertices.AddRange(vertices);
-        //        mesh.SetVertices(meshVertices);
-        //        mesh.subMeshCount = 2;
-        //        mesh.SetIndices(Enumerable.Range(vertexCount, meshVertices.Count - vertexCount).ToArray(), MeshTopology.LineStrip, 1);
-
-        //    }
-        //}
-
-        this.gameObject.AddComponent<MeshCollider>();
     }
 
     void ToggleVoids()
@@ -199,7 +180,7 @@ public class PathFinding : MonoBehaviour
         foreach (var r in _voids.GetComponentsInChildren<Renderer>())
             r.enabled = _toggleVoids;
     }
-    int vertexCount;
+
 
     IEnumerator MoveRobot(Face start, Face end)
     {
@@ -212,11 +193,11 @@ public class PathFinding : MonoBehaviour
 
         Func<TaggedEdge<Face, Edge>, double> cost = e =>
         {
-             if (e.Target.Index.y == 0 && e.Source.Index.y == 0)
-                 return 999999;
-             if (e.Target.IsUsed && e.Source.IsUsed)
-                 return 10.0;
-             return 1.0;
+            if (e.Target.Index.y == 0 && e.Source.Index.y == 0)
+                return 999999;
+            if (e.Target.IsUsed && e.Source.IsUsed)
+                return 5.0;
+            return 1.0;
         };
 
         var shortest = QuickGraph.Algorithms.AlgorithmExtensions.ShortestPathsDijkstra(graph, cost, start);
@@ -227,6 +208,9 @@ public class PathFinding : MonoBehaviour
 
         if (shortest(end, out path))
         {
+            var robot = Instantiate(robotPrefab);
+            var tile = Instantiate(tilePrefab);
+
             foreach (var edge in path)
             {
                 faces.Add(edge.Source);
@@ -236,10 +220,30 @@ public class PathFinding : MonoBehaviour
             foreach (var face in faces)
             {
                 face.IsUsed = true;
+
+                var tileFace = face.Index.x + 1;
+
+
             }
 
-            var robot = Instantiate(robotPrefab);
-            
+
+            //draw a line of robot path
+
+            var vertices = new List<Vector3>();
+
+            var currentface = start;
+            vertices.Add(currentface.Center);
+
+            foreach (var edge in path)
+            {
+                vertices.Add(edge.Tag.Center);
+                currentface = edge.GetOtherVertex(currentface);
+                vertices.Add(currentface.Center);
+            }
+            allPath.Add(vertices);
+
+            //robot tumbling
+
             var lPath = path.ToList();
 
             var current = start;
@@ -250,70 +254,64 @@ public class PathFinding : MonoBehaviour
                 var rotation = Quaternion.LookRotation(forward, up);
                 var pos = current.Center;
 
-                robot.transform.position = pos + up * 0.1f;
+                robot.transform.position = pos + up * 0.1f - forward * 0.1f;
                 robot.transform.rotation = rotation;
 
-                StartCoroutine(Tumble(robot, -rotaxis, pos + forward * 0.5f, 90));
+                tile.transform.position = robot.transform.position + rotaxis;
+                tile.transform.rotation = robot.transform.rotation;
+
+                StartCoroutine(Tumble(robot, -rotaxis, pos + forward * 0.4f, 90));
+                StartCoroutine(Tumble(tile, -rotaxis, pos + forward * 0.4f, 90));
                 yield return new WaitForSeconds(0.5f);
             }
 
-            for (int i = 0; i < lPath.Count - 1; i++)
-            {                
-                current = lPath[i].GetOtherVertex(current);                
-
-                var forward1 = Vector3.Normalize(current.Center - lPath[i].Tag.Center);
-                var forward2 = Vector3.Normalize(lPath[i + 1].Tag.Center - current.Center);
-                var up = current.Normal;
-
-                var rotation1 = Quaternion.LookRotation(forward1, up);
-                var rotation2 = Quaternion.LookRotation(up, -forward1);
-                var pos = current.Center;
-
-                var rotaxis1 = Vector3.Cross(forward1, up);
-                var rotaxis2 = Vector3.Cross(forward2, up);
-
-                robot.transform.position = lPath[i].Tag.Center + up * 0.5f;
-                robot.transform.rotation = rotation2;
-
-                if (!current.IsOccupied)
-                {
-                    StartCoroutine(Tumble(robot, -rotaxis1, lPath[i].Tag.Center + forward1 * 0.1f, 90));
-                    yield return new WaitForSeconds(0.5f);
-
-                    StartCoroutine(Tumble(robot, -rotaxis2, pos + forward2 * 0.5f, 90));
-                    yield return new WaitForSeconds(0.5f);
-                }
-            }           
-
-            Destroy(robot);
-
-            //draw a line of robot path
+            //for (int i = 0; i < lPath.Count - 1; i++)
+            int i = 0;
+            while (i < lPath.Count - 1)
             {
-                vertices = new List<Vector3>();
+                var next = lPath[i].GetOtherVertex(current);
 
-                var currentface = start;
-                vertices.Add(currentface.Center);
-
-                foreach (var edge in path)
+                if (!next.IsOccupied)
                 {
-                    vertices.Add(edge.Tag.Center);
-                    currentface = edge.GetOtherVertex(currentface);
-                    vertices.Add(currentface.Center);
+                    current = next;
+                    current.IsOccupied = true;
 
-                    current = edge.GetOtherVertex(current);
-                    if (Vector3.Distance(robot.transform.position,current.Center)<1.2f)
-                    {
-                        current.IsOccupied = true;
-                    }
-                    else current.IsOccupied = false;
+                    var forward1 = Vector3.Normalize(current.Center - lPath[i].Tag.Center);
+                    var forward2 = Vector3.Normalize(lPath[i + 1].Tag.Center - current.Center);
+                    var up = current.Normal;
+
+                    var rotation1 = Quaternion.LookRotation(forward1, up);
+                    var rotation2 = Quaternion.LookRotation(up, -forward1);
+                    var pos = current.Center;
+
+                    var rotaxis1 = Vector3.Cross(forward1, up);
+                    var rotaxis2 = Vector3.Cross(forward2, up);
+
+                    robot.transform.position = lPath[i].Tag.Center + up * 0.5f - forward1 * 0.1f;
+                    robot.transform.rotation = rotation2;
+
+                    tile.transform.position = robot.transform.position - rotaxis1;
+                    tile.transform.rotation = robot.transform.rotation;
+
+
+                    StartCoroutine(Tumble(robot, -rotaxis1, lPath[i].Tag.Center, 90));
+                    StartCoroutine(Tumble(tile, -rotaxis1, lPath[i].Tag.Center, 90));
+                    i++;
+                    yield return new WaitForSeconds(0.5f);
+
+                    tile.transform.position = robot.transform.position - rotaxis2;
+                    tile.transform.rotation = robot.transform.rotation;
+                    StartCoroutine(Tumble(robot, -rotaxis2, pos + forward2 * 0.4f, 90));
+                    StartCoroutine(Tumble(tile, -rotaxis2, pos + forward2 * 0.4f, 90));
+                    yield return new WaitForSeconds(0.5f);
+                    current.IsOccupied = false;
                 }
-
-                vertexCount = mesh.vertexCount;
-                meshVertices.AddRange(vertices);
-                mesh.SetVertices(meshVertices);
-                mesh.subMeshCount = 2;
-                mesh.SetIndices(Enumerable.Range(vertexCount, meshVertices.Count - vertexCount).ToArray(), MeshTopology.LineStrip, 1);
+                else
+                {
+                    yield return new WaitForSeconds(1f);
+                }
             }
+            Destroy(robot);
         }
     }
 
@@ -335,9 +333,9 @@ public class PathFinding : MonoBehaviour
         }
     }
 
-    void SpawnTile()
+    IEnumerator SpawnTile()
     {
-        foreach (var voxel in _grid.GetVoxels().Where(v => v.IsActive))
+        foreach (var voxel in _grid.GetVoxels().Where(v => v.IsActive).OrderBy(v => Vector3.Distance(v.Center, Vector3.zero)))
         {
             Vector3 center = voxel.Center;
 
@@ -362,6 +360,7 @@ public class PathFinding : MonoBehaviour
             for (int i = 0; i < 5; i++)
             {
                 var tile = Instantiate(tilePrefab, tilePos[i], tileRot[i]);
+                yield return new WaitForSeconds(0.01f);
             }
         }
 

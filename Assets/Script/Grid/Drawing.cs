@@ -14,6 +14,11 @@ class Drawing : MonoBehaviour
     Material _transparent;
     [SerializeField]
     Material _black;
+    [SerializeField]
+    Texture _blackTexture;
+
+    Material _pathMaterial;
+
 
     static Drawing _instance;
     static Gradient _gradient = new Gradient();
@@ -50,6 +55,18 @@ class Drawing : MonoBehaviour
 
         _opaque.mainTexture = texture;
         _transparent.mainTexture = texture;
+
+        _pathMaterial = new Material(_opaque);
+        //var color = Color.red;
+        var properties = new MaterialPropertyBlock();
+        var tex = new Texture2D(1, 1);
+        tex.SetPixel(0, 0, Color.red);
+        tex.Apply();
+
+        _pathMaterial.mainTexture = tex;
+
+        // properties.SetColor("_Color", color);
+       // _pathMaterial.SetTexture("_MainTex", tex);
     }
 
     public static void DrawCube(Vector3 center, float size)
@@ -95,10 +112,11 @@ class Drawing : MonoBehaviour
 
     public static void DrawBar(Vector3 start, Vector3 end, float radius, float t)
     {
-        var color = _gradient.Evaluate(t);
+        //var color = _gradient.Evaluate(t);   
+        var color = Color.red;
         var properties = new MaterialPropertyBlock();
         properties.SetColor("_Color", color);
-        properties.SetTexture("_MainTex", null);
+        //properties.SetTexture("_MainTex", null);
 
         var vector = end - start;
 
@@ -109,6 +127,22 @@ class Drawing : MonoBehaviour
                         );
 
         Graphics.DrawMesh(_instance._cylinder, matrix, _instance._opaque, 0, null, 0, properties);
+    }
+
+    public static void DrawRectangularBar(Vector3 start, Vector3 end, float radius, float t)
+    {
+        //var color = _gradient.Evaluate(t);   
+ 
+
+        var vector = end - start;
+
+        var matrix = Matrix4x4.TRS(
+                        start + vector * 0.5f,
+                        Quaternion.LookRotation(vector) * Quaternion.Euler(90, 0, 0),
+                        new Vector3(radius, vector.magnitude * 1f, radius)
+                        );
+
+        Graphics.DrawMesh(_instance._box, matrix, _instance._pathMaterial, 0);
     }
 
     public static void DrawMesh(bool isTransparent, params Mesh[] mesh)

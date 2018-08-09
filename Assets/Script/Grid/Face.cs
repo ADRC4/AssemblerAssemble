@@ -32,8 +32,6 @@ public class Face
         }
     }
 
-
-
     public Face(int x, int y, int z, Axis direction, Grid3d grid)
     {
         _grid = grid;
@@ -46,6 +44,7 @@ public class Face
 
         Center = GetCenter();
         Normal = GetNormal();
+
         // var center = Corner + new Vector3(x, y+0.5f, z + 0.5f) * VoxelSize;
 
         //Frame = new FrameElement2Node(start, end)

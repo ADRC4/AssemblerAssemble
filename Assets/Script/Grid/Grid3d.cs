@@ -126,7 +126,7 @@ public class Grid3d
                 }
 
         // calculate
-        //Analysis();
+        Analysis();
 
         Debug.Log($"Time to generate grid: {watch.ElapsedMilliseconds} ms");
     }
