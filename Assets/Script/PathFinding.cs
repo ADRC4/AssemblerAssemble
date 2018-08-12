@@ -33,10 +33,12 @@ public class PathFinding : MonoBehaviour
     {
         previewTile = Instantiate(previewTilePrefab);
         ToggleVoids();
-        //MakeGrid();
-        StartCoroutine(MakeGrid());
-        startFaces = _grid.Faces.Where(f => f.Index.y == 0 && f.Index.z % 2 == 0 && f.Index.x % 2 == 0 && f.IsClimbable).ToList();
-        sf = _grid.Faces.Where(f => f.Index.y == 0 && f.Index.z % 2 == 0 && f.Index.x % 2 == 0 && f.IsClimbable).First();
+        MakeGrid();
+
+
+
+        //startFaces = _grid.Faces.Where(f => f.Index.y == 0 && f.Index.z % 2 == 0 && f.Index.x % 2 == 0 && f.IsClimbable).ToList();
+        //sf = _grid.Faces.Where(f => f.Index.y == 0 && f.Index.z % 2 == 0 && f.Index.x % 2 == 0 && f.IsClimbable).First();
 
     }
 
@@ -50,6 +52,11 @@ public class PathFinding : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.P))
         {
             togglePath = !togglePath;
+        }
+
+        if (Input.GetKeyDown(KeyCode.U))
+        {
+            StartCoroutine(GrowVoxel());
         }
 
         if (togglePath)
@@ -144,7 +151,9 @@ public class PathFinding : MonoBehaviour
     Mesh mesh;
     List<Face> climableFaces;
 
-    IEnumerator MakeGrid()
+    List<Voxel> activeVoxels = new List<Voxel>();
+
+    void MakeGrid()
     {
         // create grid with voids
         var colliders = _voids
@@ -152,16 +161,58 @@ public class PathFinding : MonoBehaviour
                       .ToArray();
 
         _grid = new Grid3d(colliders, voxelSize);
+    }
 
-        climableFaces = _grid.Faces.Where(f => f.IsClimbable).ToList();
-
-        List<Face> notClimableFaces = new List<Face>(); 
-        foreach (var face in climableFaces)
+    IEnumerator GrowVoxel()
+    {
+        foreach (var voxel in _grid.GetVoxels().Where(v => v.IsActive))
         {
-            var voxel = face.Voxels.First(v => v != null && v.IsActive);
-            var notClimbFaces = voxel.Faces.Where(f => !f.IsClimbable);
-            foreach (var f in notClimbFaces) notClimableFaces.Add(f);
+            activeVoxels.Add(voxel);
+            voxel.IsActive = false;
         }
+
+        activeVoxels = activeVoxels.OrderBy(v => Vector3.Distance(v.Center, Vector3.zero)).ToList();
+
+
+        foreach (var voxel in activeVoxels)
+        {
+            voxel.IsActive = true;
+
+            var climableFaces = _grid.Faces.Where(f => f.IsClimbable);
+
+            var mesh = new Mesh()
+            {
+                indexFormat = UnityEngine.Rendering.IndexFormat.UInt32
+            };
+
+            var filter = GetComponent<MeshFilter>();
+
+            foreach (var face in climableFaces)
+            {
+                float t = 0;
+
+                Mesh faceMesh;
+                faceMesh = Drawing.MakeFace(face.Center, face.Direction, _grid.VoxelSize, t);
+
+                var subMesh = new Mesh()
+                {
+                    indexFormat = UnityEngine.Rendering.IndexFormat.UInt32
+                };
+
+                var meshes = new[] { new CombineInstance() { mesh = mesh }, new CombineInstance() { mesh = faceMesh } };
+                subMesh.CombineMeshes(meshes, true, false, false);
+                mesh = subMesh;
+                filter.mesh = mesh;
+            }
+            yield return new WaitForSeconds(0.1f);
+
+        }
+
+    }
+
+    IEnumerator GrowFace()
+    {
+        climableFaces = _grid.Faces.Where(f => f.IsClimbable).ToList();
 
         // select edges of boundary faces
         var edges = _grid.Edges.Where(e => e.ClimbableFaces.Length == 2);
@@ -183,6 +234,14 @@ public class PathFinding : MonoBehaviour
         }
 
         climableFaces = climableFaces.OrderBy(f => f.Order).ToList();
+
+        List<Face> notClimableFaces = new List<Face>();
+        foreach (var face in climableFaces)
+        {
+            var voxel = face.Voxels.First(v => v != null && v.IsActive);
+            var notClimbFaces = voxel.Faces.Where(f => !f.IsClimbable);
+            foreach (var f in notClimbFaces) notClimableFaces.Add(f);
+        }
 
         startFaces = _grid.Faces.Where(f => f.Index.y == 0 && f.Index.z % 2 == 0 && f.Index.x % 2 == 0 && f.IsClimbable).ToList();
 
@@ -213,16 +272,6 @@ public class PathFinding : MonoBehaviour
         //    collider.sharedMesh = mesh;
         //    //yield return null;
         //}
-
-        //// create graph for the inner layer
-        //var edges2 = _grid.Edges.Where(e => e.ClimbableFaces.Length == 2);
-
-        //var graphEdges2 = edges.Select(e => new TaggedEdge<Face, Edge>(e.ClimbableFaces[0], e.ClimbableFaces[1], e));
-        //var graph2 = graphEdges2.ToUndirectedGraph<Face, TaggedEdge<Face, Edge>>();
-
-        //var startFace2 = _grid.Faces.Where(f => Vector3.Distance(f.Center, Vector3.zero) < 1.5f && f.IsClimbable).First();
-
-        //var shortestGrow2 = QuickGraph.Algorithms.AlgorithmExtensions.ShortestPathsDijkstra(graph2, e => 1.0, startFace2);
 
         foreach (var face in notClimableFaces)
         {
