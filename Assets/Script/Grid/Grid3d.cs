@@ -126,7 +126,7 @@ public class Grid3d
                 }
 
         // calculate
-        Analysis();
+        //Analysis();
 
         Debug.Log($"Time to generate grid: {watch.ElapsedMilliseconds} ms");
     }
@@ -211,8 +211,7 @@ public class Grid3d
         {
             center = voxel.Center;
 
-            if (voxel.Value < 0.7)
-                activeCenter.Add(center);
+            activeCenter.Add(center);
 
         }
     }

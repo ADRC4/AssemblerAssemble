@@ -3025,7 +3025,7 @@ GameObject:
   - component: {fileID: 1411918291}
   - component: {fileID: 1411918292}
   - component: {fileID: 1411918293}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: MainController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3121,7 +3121,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d8a84aea30f38a4c811679f47e41055, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _skin: {fileID: 0}
+  voxelSize: 1.2
   robotPrefab: {fileID: 1367682258553978, guid: 3f4724f97d1de0d4cbf3205b0944f33d,
     type: 2}
   tilePrefab: {fileID: 1204436257596028, guid: 0c2d86e636e78b64095b328ddc9383e3, type: 2}

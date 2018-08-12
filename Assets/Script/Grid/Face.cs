@@ -15,6 +15,7 @@ public class Face
     public Vector3 Normal;
     //public float NormalizedDistance = 0f;
     public Mesh Geometry;
+    public int Order;
 
     Grid3d _grid;
     // public FrameElement2Node Frame;
@@ -129,4 +130,5 @@ public class Face
                 throw new Exception("Wrong direction.");
         }
     }
+
 }
