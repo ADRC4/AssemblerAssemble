@@ -10,7 +10,11 @@ public class Voxel
     public Vector3 Center;
     public bool IsActive;
     public float Value;
+
     public List<Face> Faces = new List<Face>(6);
+    public List<Edge> Edges = new List<Edge>(12);
+
+    public float Order;
 
     Grid3d _grid;
 

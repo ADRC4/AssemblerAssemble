@@ -15,10 +15,8 @@ class Drawing : MonoBehaviour
     [SerializeField]
     Material _black;
     [SerializeField]
-    Texture _blackTexture;
 
     Material _pathMaterial;
-
 
     static Drawing _instance;
     static Gradient _gradient = new Gradient();
@@ -80,19 +78,19 @@ class Drawing : MonoBehaviour
         Graphics.DrawMesh(_instance._box, matrix, _instance._transparent, 0);
     }
 
-    //public static void DrawFace(Vector3 center, Normal direction, float size)
+    //public static void DrawFace(Vector3 center, Axis direction, float size)
     //{
     //    Quaternion rotation = Quaternion.identity;
 
     //    switch (direction)
     //    {
-    //        case Normal.X:
+    //        case Axis.X:
     //            rotation = Quaternion.Euler(0, 90, 0);
     //            break;
-    //        case Normal.Y:
+    //        case Axis.Y:
     //            rotation = Quaternion.Euler(90, 0, 0);
     //            break;
-    //        case Normal.Z:
+    //        case Axis.Z:
     //            rotation = Quaternion.Euler(0, 0, 0);
     //            break;
     //        default:
@@ -131,9 +129,6 @@ class Drawing : MonoBehaviour
 
     public static void DrawRectangularBar(Vector3 start, Vector3 end, float radius, float t)
     {
-        //var color = _gradient.Evaluate(t);   
- 
-
         var vector = end - start;
 
         var matrix = Matrix4x4.TRS(

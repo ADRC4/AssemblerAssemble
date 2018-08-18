@@ -3081,7 +3081,7 @@ MonoBehaviour:
   _opaque: {fileID: 2100000, guid: 300291c440c1b1543b0ac4b94342e6da, type: 2}
   _transparent: {fileID: 2100000, guid: 8551294fdd979674089b84f0a3f10f0a, type: 2}
   _black: {fileID: 2100000, guid: 8b09667326890194e80ada83e6fe658d, type: 2}
-  _blackTexture: {fileID: 0}
+  _pathMaterial: {fileID: 0}
 --- !u!114 &1411918289
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3127,6 +3127,8 @@ MonoBehaviour:
   tilePrefab: {fileID: 1204436257596028, guid: 0c2d86e636e78b64095b328ddc9383e3, type: 2}
   previewTilePrefab: {fileID: 1212354607611876, guid: 7b24cebfbec6ef74abd21b0d69068303,
     type: 2}
+  voxelGrowTime: 2
+  tumblingTime: 0.5
 --- !u!33 &1411918292
 MeshFilter:
   m_ObjectHideFlags: 0

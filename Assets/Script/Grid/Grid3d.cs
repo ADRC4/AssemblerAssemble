@@ -210,9 +210,7 @@ public class Grid3d
         foreach (var voxel in activeVoxel)
         {
             center = voxel.Center;
-
             activeCenter.Add(center);
-
         }
     }
 }

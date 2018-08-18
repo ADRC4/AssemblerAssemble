@@ -9,12 +9,14 @@ using QuickGraph;
 public class Face
 {
     public Voxel[] Voxels;
+    public Edge[] Edges;
     public Vector3Int Index;
     public Vector3 Center;
     public Axis Direction;
     public Vector3 Normal;
     //public float NormalizedDistance = 0f;
     public Mesh Geometry;
+    public Vector3 Offset;
     public int Order;
 
     Grid3d _grid;
@@ -28,7 +30,7 @@ public class Face
     {
         get
         {
-            if (Index.y == 0 && Direction == Axis.Y) return false;
+            //if (Index.y == 0 && Direction == Axis.Y) return false;
             return Voxels.Count(v => v != null && v.IsActive) == 1;
         }
     }
@@ -45,19 +47,7 @@ public class Face
 
         Center = GetCenter();
         Normal = GetNormal();
-
-        // var center = Corner + new Vector3(x, y+0.5f, z + 0.5f) * VoxelSize;
-
-        //Frame = new FrameElement2Node(start, end)
-        //{
-        //    Iy = 0.02,
-        //    Iz = 0.02,
-        //    A = 0.01,
-        //    J = 0.05,
-        //    E = 210e9,
-        //    G = 70e9,
-        //    ConsiderShearDeformation = false,
-        //};
+        Edges = GetEdge();
     }
 
     Vector3 GetCenter()
@@ -131,4 +121,34 @@ public class Face
         }
     }
 
+    Edge[] GetEdge()
+    {
+        int x = Index.x;
+        int y = Index.y;
+        int z = Index.z;
+
+        switch (Direction)
+        {
+            case Axis.X:
+                return new[]
+                {
+                    y == 0 ? Voxels[0]?.Edges[0] : Voxels[1]?.Edges[1],
+                    z == 0 ? Voxels[0]?.Edges[2] : Voxels[1]?.Edges[3],
+                };
+            case Axis.Y:
+                return new[]
+                {
+                    x == 0 ? Voxels[0]?.Edges[4] : Voxels[1]?.Edges[5],
+                    z == 0 ? Voxels[0]?.Edges[6] : Voxels[1]?.Edges[7],
+                };
+            case Axis.Z:
+                return new[]
+                {
+                    x == 0 ? Voxels[0]?.Edges[8] : Voxels[1]?.Edges[9],
+                    y == 0 ? Voxels[0]?.Edges[10] : Voxels[1]?.Edges[11],
+                };
+            default:
+                throw new Exception("Wrong direction.");
+        }
+    }
 }

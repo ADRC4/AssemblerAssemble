@@ -24,7 +24,7 @@ public class Edge
         Center = GetCenter();
         Voxels = GetVoxels();
         Faces = GetFaces();
-        ClimbableFaces = Faces.Where(f => f != null && f.IsClimbable).ToArray();
+        ClimbableFaces = Faces.Where(f => f != null && f.IsClimbable).ToArray();        
     }
 
     Vector3 GetCenter()
