@@ -143,7 +143,7 @@ public class MainController : MonoBehaviour
         //_grid.DisplacementScale = _displacement;
         //Drawing.DrawMesh(_toggleTransparency, _grid.Mesh);
 
-        foreach (var face in _grid.Faces.Where(f => f.IsClimbable))
+        foreach (var face in _grid.GetFaces().Where(f => f.IsClimbable))
         {
             if (face.Geometry == null)
                 face.Geometry = Drawing.MakeFace(face.Center, face.Direction, _grid.VoxelSize, 1);

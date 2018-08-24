@@ -9,15 +9,17 @@ using QuickGraph;
 public class Face
 {
     public Voxel[] Voxels;
-    public Edge[] Edges;
     public Vector3Int Index;
     public Vector3 Center;
     public Axis Direction;
-    public Vector3 Normal;
+    public Vector3 Normal => GetNormal();
     //public float NormalizedDistance = 0f;
     public Mesh Geometry;
     public Vector3 Offset;
     public int Order;
+
+    public Edge[] Edges => GetEdges();
+    public Corner[] Corners => GetCorners();
 
     Grid3d _grid;
     // public FrameElement2Node Frame;
@@ -30,8 +32,12 @@ public class Face
     {
         get
         {
-            //if (Index.y == 0 && Direction == Axis.Y) return false;
-            return Voxels.Count(v => v != null && v.IsActive) == 1;
+            var climbable= Voxels.Count(v => v != null && v.IsActive) == 1;
+            if (Index.y == 0 && Direction == Axis.Y)
+            {
+                climbable = !climbable;
+            }
+            return climbable;
         }
     }
 
@@ -46,8 +52,6 @@ public class Face
             v.Faces.Add(this);
 
         Center = GetCenter();
-        Normal = GetNormal();
-        Edges = GetEdge();
     }
 
     Vector3 GetCenter()
@@ -111,17 +115,18 @@ public class Face
         switch (Direction)
         {
             case Axis.X:
-             return left ? Vector3.right : -Vector3.right; 
+                return left ? Vector3.right : -Vector3.right;
             case Axis.Y:
+                bool normal = left;
                 return left ? Vector3.up : -Vector3.up;
             case Axis.Z:
-             return left ? Vector3.forward : -Vector3.forward;
+                return left ? Vector3.forward : -Vector3.forward;
             default:
                 throw new Exception("Wrong direction.");
         }
     }
 
-    Edge[] GetEdge()
+    Edge[] GetEdges()
     {
         int x = Index.x;
         int y = Index.y;
@@ -132,23 +137,67 @@ public class Face
             case Axis.X:
                 return new[]
                 {
-                    y == 0 ? Voxels[0]?.Edges[0] : Voxels[1]?.Edges[1],
-                    z == 0 ? Voxels[0]?.Edges[2] : Voxels[1]?.Edges[3],
+                  _grid.Edges[1][x, y, z],
+                  _grid.Edges[1][x, y, z + 1],
+                  _grid.Edges[2][x, y, z],
+                  _grid.Edges[2][x, y + 1, z]
                 };
             case Axis.Y:
                 return new[]
                 {
-                    x == 0 ? Voxels[0]?.Edges[4] : Voxels[1]?.Edges[5],
-                    z == 0 ? Voxels[0]?.Edges[6] : Voxels[1]?.Edges[7],
+                  _grid.Edges[0][x, y, z],
+                  _grid.Edges[0][x, y, z + 1],
+                  _grid.Edges[2][x, y, z],
+                  _grid.Edges[2][x + 1, y, z]
                 };
             case Axis.Z:
                 return new[]
+               {
+                  _grid.Edges[0][x, y, z],
+                  _grid.Edges[0][x, y + 1, z],
+                  _grid.Edges[1][x, y, z],
+                  _grid.Edges[1][x + 1, y, z]
+                };
+            default:
+                throw new Exception("Wrong direction.");
+        }
+    }
+
+    Corner[] GetCorners()
+    {
+        int x = Index.x;
+        int y = Index.y;
+        int z = Index.z;
+
+        switch (Direction)
+        {
+            case Axis.X:
+                return new[]
                 {
-                    x == 0 ? Voxels[0]?.Edges[8] : Voxels[1]?.Edges[9],
-                    y == 0 ? Voxels[0]?.Edges[10] : Voxels[1]?.Edges[11],
+                 _grid.Corners[x, y, z],
+                 _grid.Corners[x, y + 1, z],
+                 _grid.Corners[x, y, z + 1],
+                 _grid.Corners[x, y + 1, z + 1]
+                };
+            case Axis.Y:
+                return new[]
+                {
+                 _grid.Corners[x, y, z],
+                 _grid.Corners[x + 1, y, z],
+                 _grid.Corners[x, y, z + 1],
+                 _grid.Corners[x + 1, y, z + 1]
+                };
+            case Axis.Z:
+                return new[]
+{
+                 _grid.Corners[x, y, z],
+                 _grid.Corners[x + 1, y, z],
+                 _grid.Corners[x, y + 1, z],
+                 _grid.Corners[x + 1, y + 1, z]
                 };
             default:
                 throw new Exception("Wrong direction.");
         }
     }
 }
+

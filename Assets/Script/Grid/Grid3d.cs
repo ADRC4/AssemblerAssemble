@@ -3,6 +3,7 @@ using System.Linq;
 using UnityEngine;
 using BriefFiniteElementNet;
 using System.Diagnostics;
+using QuickGraph;
 using Debug = UnityEngine.Debug;
 
 public enum Axis { X, Y, Z };
@@ -11,8 +12,9 @@ public class Grid3d
 {
     public Voxel[,,] Voxels;
     public Corner[,,] Corners;
-    public List<Face> Faces;
-    public List<Edge> Edges;
+
+    public Face[][,,] Faces = new Face[3][,,];
+    public Edge[][,,] Edges = new Edge[3][,,];
 
     public Vector3Int Size;
     public float VoxelSize;
@@ -78,57 +80,65 @@ public class Grid3d
                 }
 
         // make faces
-        Faces = new List<Face>();
+        Faces[0] = new Face[Size.x + 1, Size.y, Size.z];
 
         for (int z = 0; z < Size.z; z++)
             for (int y = 0; y < Size.y; y++)
                 for (int x = 0; x < Size.x + 1; x++)
                 {
-                    Faces.Add(new Face(x, y, z, Axis.X, this));
+                    Faces[0][x, y, z] = new Face(x, y, z, Axis.X, this);
                 }
+
+        Faces[1] = new Face[Size.x, Size.y + 1, Size.z];
 
         for (int z = 0; z < Size.z; z++)
             for (int y = 0; y < Size.y + 1; y++)
                 for (int x = 0; x < Size.x; x++)
                 {
-                    Faces.Add(new Face(x, y, z, Axis.Y, this));
+                    Faces[1][x, y, z] = new Face(x, y, z, Axis.Y, this);
                 }
+
+        Faces[2] = new Face[Size.x, Size.y, Size.z + 1];
 
         for (int z = 0; z < Size.z + 1; z++)
             for (int y = 0; y < Size.y; y++)
                 for (int x = 0; x < Size.x; x++)
                 {
-                    Faces.Add(new Face(x, y, z, Axis.Z, this));
+                    Faces[2][x, y, z] = new Face(x, y, z, Axis.Z, this);
                 }
 
         // make edges
-        Edges = new List<Edge>();
+        Edges[2] = new Edge[Size.x + 1, Size.y + 1, Size.z];
 
         for (int z = 0; z < Size.z; z++)
             for (int y = 0; y < Size.y + 1; y++)
                 for (int x = 0; x < Size.x + 1; x++)
                 {
-                    Edges.Add(new Edge(x, y, z, Axis.Z, this));
+                    Edges[2][x, y, z] = new Edge(x, y, z, Axis.Z, this);
                 }
+
+        Edges[0] = new Edge[Size.x, Size.y + 1, Size.z + 1];
 
         for (int z = 0; z < Size.z + 1; z++)
             for (int y = 0; y < Size.y + 1; y++)
                 for (int x = 0; x < Size.x; x++)
                 {
-                    Edges.Add(new Edge(x, y, z, Axis.X, this));
+                    Edges[0][x, y, z] = new Edge(x, y, z, Axis.X, this);
                 }
+
+        Edges[1] = new Edge[Size.x + 1, Size.y, Size.z + 1];
 
         for (int z = 0; z < Size.z + 1; z++)
             for (int y = 0; y < Size.y; y++)
                 for (int x = 0; x < Size.x + 1; x++)
                 {
-                    Edges.Add(new Edge(x, y, z, Axis.Y, this));
+                    Edges[1][x, y, z] = new Edge(x, y, z, Axis.Y, this);
                 }
 
         // calculate
         //Analysis();
 
-        Debug.Log($"Time to generate grid: {watch.ElapsedMilliseconds} ms");
+        //Debug.Log($"Time to generate grid: {watch.ElapsedMilliseconds} ms");
     }
 
     public IEnumerable<Voxel> GetVoxels()
@@ -139,6 +149,51 @@ public class Grid3d
                 {
                     yield return Voxels[x, y, z];
                 }
+    }
+
+    public IEnumerable<Face> GetFaces()
+    {
+        for (int n = 0; n < 3; n++)
+        {
+            int xSize = Faces[n].GetLength(0);
+            int ySize = Faces[n].GetLength(1);
+            int zSize = Faces[n].GetLength(2);
+
+            for (int z = 0; z < zSize; z++)
+                for (int y = 0; y < ySize; y++)
+                    for (int x = 0; x < xSize; x++)
+                    {
+                        yield return Faces[n][x, y, z];
+                    }
+        }
+    }
+
+    public IEnumerable<Edge> GetEdges()
+    {
+        for (int n = 0; n < 3; n++)
+        {
+            int xSize = Edges[n].GetLength(0);
+            int ySize = Edges[n].GetLength(1);
+            int zSize = Edges[n].GetLength(2);
+
+            for (int z = 0; z < zSize; z++)
+                for (int y = 0; y < ySize; y++)
+                    for (int x = 0; x < xSize; x++)
+                    {
+                        yield return Edges[n][x, y, z];
+                    }
+        }
+    }
+
+    public int GetConnectedComponents()
+    {
+        var graph = new UndirectedGraph<Voxel, Edge<Voxel>>();
+        graph.AddVertexRange(GetVoxels().Where(v => v.IsActive));
+        graph.AddEdgeRange(GetFaces().Where(f => f.IsActive).Select(f => new Edge<Voxel>(f.Voxels[0], f.Voxels[1])));
+
+        Dictionary<Voxel, int> components = new Dictionary<Voxel, int>();
+        var count = QuickGraph.Algorithms.AlgorithmExtensions.ConnectedComponents(graph, components);
+        return count;
     }
 
     public void Analysis()
