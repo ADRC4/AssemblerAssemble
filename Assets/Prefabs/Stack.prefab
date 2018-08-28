@@ -9,30 +9,30 @@ Prefab:
     m_Modifications: []
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 0}
-  m_RootGameObject: {fileID: 1274295347291124}
+  m_RootGameObject: {fileID: 1427654407122136}
   m_IsPrefabAsset: 1
---- !u!1 &1274295347291124
+--- !u!1 &1427654407122136
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4650457595607644}
-  - component: {fileID: 114011911983330888}
+  - component: {fileID: 4827690577081020}
+  - component: {fileID: 114702103908930444}
   m_Layer: 0
-  m_Name: RobotAuto
+  m_Name: Stack
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4650457595607644
+--- !u!4 &4827690577081020
 Transform:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1274295347291124}
+  m_GameObject: {fileID: 1427654407122136}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -40,20 +40,17 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &114011911983330888
+--- !u!114 &114702103908930444
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1274295347291124}
+  m_GameObject: {fileID: 1427654407122136}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3fa792637dfa5574c91a50094a0aec71, type: 3}
+  m_Script: {fileID: 11500000, guid: f72dbde13d51f9a4aa3afcea3e60001a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   tilePrefab: {fileID: 1204436257596028, guid: 0c2d86e636e78b64095b328ddc9383e3, type: 2}
   robotPrefab: {fileID: 1367682258553978, guid: 3f4724f97d1de0d4cbf3205b0944f33d,
     type: 2}
-  sliderPrefab: {fileID: 1802588097300672, guid: 25f93cf3e8fb24a4b9e56e1e649f0619,
-    type: 2}
-  stackIndex: 0

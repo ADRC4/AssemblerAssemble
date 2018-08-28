@@ -26,7 +26,7 @@ public class CreatePrograms : MonoBehaviour
 
     Vector3 boundSize;
 
-    string boundSizeStringX = "11"; string boundSizeStringY = "8.5"; string boundSizeStringZ = "14";
+    string boundSizeStringX = "7.5"; string boundSizeStringY = "8.5"; string boundSizeStringZ = "14";
 
     public Transform program;
 
@@ -66,8 +66,8 @@ public class CreatePrograms : MonoBehaviour
 
     int placeTileCount;
     int pickTileCount;
-    int robotCount;
-    int pickRobotCount;
+    int activeRobotCount;
+    int totalRobotCount;
 
     int jointList;
 
@@ -84,7 +84,7 @@ public class CreatePrograms : MonoBehaviour
 
     void SpawnBoundary()
     {
-        boundSize = new Vector3(float.Parse(boundSizeStringX) * 2, float.Parse(boundSizeStringY) * 2, float.Parse(boundSizeStringZ) * 2);
+        boundSize = new Vector3(float.Parse(boundSizeStringX) , float.Parse(boundSizeStringY) , float.Parse(boundSizeStringZ));
         boundary = Instantiate(boundaryPrefab, Vector3.zero, Quaternion.identity);
         boundary.transform.localScale = boundSize;
         boundary.transform.position = Vector3.zero + Vector3.up * (boundSize.y / 2);
@@ -120,16 +120,17 @@ public class CreatePrograms : MonoBehaviour
         programsSlabList[index] = programsSlab;
     }
 
-
+    
     void Update()
     {        
-        placeTileCount = CreateStack.placeTileNumber;        
-        pickTileCount = (CreateStack.pickTileNumber/2) *3;
-        pickRobotCount = AutoMovement._pickRobots.Count;
+        placeTileCount = PathFinding.placeTiles.Count;       
+        pickTileCount = (CreateStack.pickTileNumber) * PathFinding.startFaces.Count;
+        activeRobotCount = PathFinding.allPaths.Count;
+        totalRobotCount = PathFinding.startFaces.Count*2;
         jointList = placeTileCount*2;
 
-            if (boundary != null && programsPoint == null)
-            {
+        if (boundary != null && programsPoint == null)
+        {
                 boundary.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
                 boundary.transform.position = new Vector3(boundary.transform.position.x, scaleY / 2, boundary.transform.position.z);
 
@@ -139,9 +140,9 @@ public class CreatePrograms : MonoBehaviour
                 boundSizeStringX = bounds.extents.x.ToString();
                 boundSizeStringY = bounds.extents.y.ToString();
                 boundSizeStringZ = bounds.extents.z.ToString();
-            }
-            else if (programsPoint != null)
-            {
+        }
+        else if (programsPoint != null)
+        {
                 programsPoint.transform.position = new Vector3(scaleX, scaleY, scaleZ);
                 programsSlab.transform.position = new Vector3(scaleX, scaleY -3, scaleZ);
         }
@@ -189,54 +190,54 @@ public class CreatePrograms : MonoBehaviour
         boundSizeStringY = GUI.TextField(new Rect(Screen.width - 100f, 75, 25, 20), boundSizeStringY);
         boundSizeStringZ = GUI.TextField(new Rect(Screen.width - 130f, 75, 25, 20), boundSizeStringZ);
 
-        for (int i = 0; i < pCount; i++)
-        {
-            if (GUI.Button(new Rect(Screen.width - 180f, 65 * i + 140, 60, 60), programTexture[i]))
-            {
-                if (programList[i] == null)
-                {
-                    scaleX = programScl[i].x; scaleY = programScl[i].y; scaleZ = programScl[i].z;
-
-                    scaleXMin = (int)programScl[i].x - 2; scaleXMax = (int)programScl[i].x + 2;
-                    scaleYMin = (int)programScl[i].y - 2; scaleYMax = (int)programScl[i].y + 2;
-                    scaleZMin = (int)programScl[i].z - 2; scaleZMax = (int)programScl[i].z + 2;
-                    SpawnPrograms(programPrefab[i], Vector3.zero, programColor[i], Random.Range(30, 50), Vector3.one, i);
-                }
-                else
-                {
-                    programs = programList[i];
-                }
-            }
-            GUI.Label(new Rect(Screen.width - 150f, 65 * i + 150, 100, 20), programsName[i], styleRight);
-            GUI.DrawTexture(new Rect(Screen.width - 177f, 65 * i + 145, 125, 55), lineTexture);
-        }
-
         //for (int i = 0; i < pCount; i++)
         //{
         //    if (GUI.Button(new Rect(Screen.width - 180f, 65 * i + 140, 60, 60), programTexture[i]))
         //    {
-        //        if (programsPointList[i] == null)
+        //        if (programList[i] == null)
         //        {
-        //            scaleX = programPos[i].x; scaleY = programPos[i].y; scaleZ = programPos[i].z;
-        //            var pos = new Vector3(scaleX, scaleY, scaleZ);
-        //            scaleXMin = (int)(bounds.center.x - bounds.extents.x); scaleXMax = (int)(bounds.center.x + bounds.extents.x);
-        //            scaleYMin = (int)(bounds.center.y - bounds.extents.y); scaleYMax = (int)(bounds.center.y + bounds.extents.y);
-        //            scaleZMin = (int)(bounds.center.z - bounds.extents.z); scaleZMax = (int)(bounds.center.z + bounds.extents.z);
-        //            SpawnProgramsPoint(pos, programColor[i],1, i);
-        //            SpawnSlab(pos + Vector3.down * 3, programColor[i], programScl[i], i);
-        //            if (i == 8) programsSlabList[8].transform.rotation = Quaternion.Euler(60, 90, 90);
-                    
+        //            scaleX = programScl[i].x; scaleY = programScl[i].y; scaleZ = programScl[i].z;
+
+        //            scaleXMin = (int)programScl[i].x - 2; scaleXMax = (int)programScl[i].x + 2;
+        //            scaleYMin = (int)programScl[i].y - 2; scaleYMax = (int)programScl[i].y + 2;
+        //            scaleZMin = (int)programScl[i].z - 2; scaleZMax = (int)programScl[i].z + 2;
+        //            SpawnPrograms(programPrefab[i], Vector3.zero, programColor[i], Random.Range(30, 50), Vector3.one, i);
         //        }
         //        else
         //        {
-        //            programsPoint = programsPointList[i];
-        //            programsSlab = programsSlabList[i];
-        //            boundary = null;
+        //            programs = programList[i];
         //        }
         //    }
         //    GUI.Label(new Rect(Screen.width - 150f, 65 * i + 150, 100, 20), programsName[i], styleRight);
         //    GUI.DrawTexture(new Rect(Screen.width - 177f, 65 * i + 145, 125, 55), lineTexture);
         //}
+
+        for (int i = 0; i < pCount; i++)
+        {
+            if (GUI.Button(new Rect(Screen.width - 180f, 65 * i + 140, 60, 60), programTexture[i]))
+            {
+                if (programsPointList[i] == null)
+                {
+                    scaleX = programPos[i].x; scaleY = programPos[i].y; scaleZ = programPos[i].z;
+                    var pos = new Vector3(scaleX, scaleY, scaleZ);
+                    scaleXMin = (int)(bounds.center.x - bounds.extents.x); scaleXMax = (int)(bounds.center.x + bounds.extents.x);
+                    scaleYMin = (int)(bounds.center.y - bounds.extents.y); scaleYMax = (int)(bounds.center.y + bounds.extents.y);
+                    scaleZMin = (int)(bounds.center.z - bounds.extents.z); scaleZMax = (int)(bounds.center.z + bounds.extents.z);
+                    SpawnProgramsPoint(pos, programColor[i], 1, i);
+                    SpawnSlab(pos + Vector3.down * 3, programColor[i], programScl[i], i);
+                    if (i == 8) programsSlabList[8].transform.rotation = Quaternion.Euler(60, 90, 90);
+
+                }
+                else
+                {
+                    programsPoint = programsPointList[i];
+                    programsSlab = programsSlabList[i];
+                    boundary = null;
+                }
+            }
+            GUI.Label(new Rect(Screen.width - 150f, 65 * i + 150, 100, 20), programsName[i], styleRight);
+            GUI.DrawTexture(new Rect(Screen.width - 177f, 65 * i + 145, 125, 55), lineTexture);
+        }
 
         int s = 0;
         int textOffset = 40;
@@ -252,8 +253,8 @@ public class CreatePrograms : MonoBehaviour
         GUI.Label(new Rect(buttonOffset, buttonOffsetV + gap * s +10, buttonSize, buttonSize), pickTileCount.ToString(), styleMiddle);
 
         GUI.Label(new Rect(textOffset, textOffsetV + gap * s++, 100, 20), "Robots: ", styleLeft);
-        GUI.Label(new Rect(buttonOffset, buttonOffsetV + gap * s -10, buttonSize, buttonSize), robotCount.ToString(), styleMiddle);
-        GUI.Label(new Rect(buttonOffset, buttonOffsetV + gap * s +10, buttonSize, buttonSize), pickRobotCount.ToString(), styleMiddle);
+        GUI.Label(new Rect(buttonOffset, buttonOffsetV + gap * s -10, buttonSize, buttonSize), activeRobotCount.ToString(), styleMiddle);
+        GUI.Label(new Rect(buttonOffset, buttonOffsetV + gap * s +10, buttonSize, buttonSize), totalRobotCount.ToString(), styleMiddle);
 
         GUI.Label(new Rect(textOffset, textOffsetV + gap * s++, 100, 20), "Assembly: ", styleLeft);
         GUI.Label(new Rect(buttonOffset, buttonOffsetV + gap * s -10, buttonSize, buttonSize), assemblyHour.ToString() + " h", styleMiddle);
@@ -274,9 +275,9 @@ public class CreatePrograms : MonoBehaviour
 
         GUI.skin = Slider;
 
-        scaleX = Mathf.RoundToInt(GUI.HorizontalSlider(new Rect(Screen.width - 225, Screen.height - 90, 200, 20), scaleX, scaleXMin, scaleXMax));
-        scaleY = Mathf.RoundToInt(GUI.HorizontalSlider(new Rect(Screen.width - 225, Screen.height - 70, 200, 20), scaleY, scaleYMin, scaleYMax));
-        scaleZ = Mathf.RoundToInt(GUI.HorizontalSlider(new Rect(Screen.width - 225, Screen.height - 50, 200, 20), scaleZ, scaleZMin, scaleZMax));
+        scaleX = (GUI.HorizontalSlider(new Rect(Screen.width - 225, Screen.height - 90, 200, 20), scaleX, scaleXMin, scaleXMax));
+        scaleY = (GUI.HorizontalSlider(new Rect(Screen.width - 225, Screen.height - 70, 200, 20), scaleY, scaleYMin, scaleYMax));
+        scaleZ = (GUI.HorizontalSlider(new Rect(Screen.width - 225, Screen.height - 50, 200, 20), scaleZ, scaleZMin, scaleZMax));
         
     }
 }

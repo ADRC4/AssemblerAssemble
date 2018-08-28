@@ -8,36 +8,80 @@ using QuickGraph;
 
 public class Face
 {
+    public enum BoundaryType { Inside = 0, Left = -1, Right = 1, Outside = 2 }
+
     public Voxel[] Voxels;
     public Vector3Int Index;
     public Vector3 Center;
     public Axis Direction;
-    public Vector3 Normal => GetNormal();
-    //public float NormalizedDistance = 0f;
-    public Mesh Geometry;
-    public Vector3 Offset;
-    public int Order;
 
     public Edge[] Edges => GetEdges();
     public Corner[] Corners => GetCorners();
+
+    // public float NormalizedDistance = 0f;
+    // public Mesh Geometry;
+
+    public Vector3 Offset;
+    public float Order;
+
+    public bool IsUsed;
+    public bool IsOccupied;
 
     Grid3d _grid;
     // public FrameElement2Node Frame;
 
     public bool IsActive => Voxels.Count(v => v != null && v.IsActive) == 2;
-    public bool IsUsed;
-    public bool IsOccupied;
+
+    public BoundaryType Boundary
+    {
+        get
+        {
+            bool left = Voxels[0] != null && Voxels[0].IsActive;
+            bool right = Voxels[1] != null && Voxels[1].IsActive;
+
+            if (!left && right) return BoundaryType.Left;
+            if (left && !right) return BoundaryType.Right;
+            if (left && right) return BoundaryType.Inside;
+            return BoundaryType.Outside;
+        }
+    }
+
+    public Vector3 Normal
+    {
+        get
+        {
+            int f = (int)Boundary;
+            if (Boundary == BoundaryType.Outside) f = 0;
+
+            if (Index.y == 0 && Direction == Axis.Y)
+            {
+                f = Boundary == BoundaryType.Outside ? 1 : 0;
+            }
+
+            switch (Direction)
+            {
+                case Axis.X:
+                    return Vector3.right * f;
+                case Axis.Y:
+                    return Vector3.up * f;
+                case Axis.Z:
+                    return Vector3.forward * f;
+                default:
+                    throw new Exception("Wrong direction.");
+            }
+        }
+    }
 
     public bool IsClimbable
     {
         get
         {
-            var climbable= Voxels.Count(v => v != null && v.IsActive) == 1;
             if (Index.y == 0 && Direction == Axis.Y)
             {
-                climbable = !climbable;
+                return Boundary == BoundaryType.Outside;
             }
-            return climbable;
+
+            return Boundary == BoundaryType.Left || Boundary == BoundaryType.Right;
         }
     }
 
@@ -52,6 +96,19 @@ public class Face
             v.Faces.Add(this);
 
         Center = GetCenter();
+
+        // var center = Corner + new Vector3(x, y+0.5f, z + 0.5f) * VoxelSize;
+
+        //Frame = new FrameElement2Node(start, end)
+        //{
+        //    Iy = 0.02,
+        //    Iz = 0.02,
+        //    A = 0.01,
+        //    J = 0.05,
+        //    E = 210e9,
+        //    G = 70e9,
+        //    ConsiderShearDeformation = false,
+        //};
     }
 
     Vector3 GetCenter()
@@ -104,28 +161,6 @@ public class Face
         }
     }
 
-    Vector3 GetNormal()
-    {
-        int x = Index.x;
-        int y = Index.y;
-        int z = Index.z;
-
-        bool left = Voxels[0] != null && Voxels[0].IsActive;
-
-        switch (Direction)
-        {
-            case Axis.X:
-                return left ? Vector3.right : -Vector3.right;
-            case Axis.Y:
-                bool normal = left;
-                return left ? Vector3.up : -Vector3.up;
-            case Axis.Z:
-                return left ? Vector3.forward : -Vector3.forward;
-            default:
-                throw new Exception("Wrong direction.");
-        }
-    }
-
     Edge[] GetEdges()
     {
         int x = Index.x;
@@ -152,7 +187,7 @@ public class Face
                 };
             case Axis.Z:
                 return new[]
-               {
+                {
                   _grid.Edges[0][x, y, z],
                   _grid.Edges[0][x, y + 1, z],
                   _grid.Edges[1][x, y, z],
@@ -200,4 +235,3 @@ public class Face
         }
     }
 }
-

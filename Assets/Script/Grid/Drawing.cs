@@ -17,6 +17,7 @@ class Drawing : MonoBehaviour
     [SerializeField]
 
     Material _pathMaterial;
+    Material _previewMaterial;
 
     static Drawing _instance;
     static Gradient _gradient = new Gradient();
@@ -55,27 +56,32 @@ class Drawing : MonoBehaviour
         _transparent.mainTexture = texture;
 
         _pathMaterial = new Material(_opaque);
-        //var color = Color.red;
         var properties = new MaterialPropertyBlock();
-        var tex = new Texture2D(1, 1);
-        tex.SetPixel(0, 0, Color.red);
-        tex.Apply();
+        var texRed = new Texture2D(1, 1);
+        texRed.SetPixel(0, 0, Color.red);
+        texRed.Apply();
+        _pathMaterial.mainTexture = texRed;
 
-        _pathMaterial.mainTexture = tex;
+        //_previewMaterial = new Material(_transparent);
+        //var texBlue = new Texture2D(1, 1);
+        //texBlue.SetPixel(0, 0, Color.blue);
+        //texBlue.Apply();
+        //_pathMaterial.mainTexture = texBlue;
 
-        // properties.SetColor("_Color", color);
-       // _pathMaterial.SetTexture("_MainTex", tex);
     }
 
     public static void DrawCube(Vector3 center, float size)
     {
+        var color = Color.blue;
+        var properties = new MaterialPropertyBlock();
+        properties.SetColor("_Color", color);
         var matrix = Matrix4x4.TRS(
                 center,
                 Quaternion.identity,
                 Vector3.one * (size * 0.999f)
                 );
 
-        Graphics.DrawMesh(_instance._box, matrix, _instance._transparent, 0);
+        Graphics.DrawMesh(_instance._box, matrix, _instance._previewMaterial, 0);
     }
 
     //public static void DrawFace(Vector3 center, Axis direction, float size)
@@ -110,11 +116,9 @@ class Drawing : MonoBehaviour
 
     public static void DrawBar(Vector3 start, Vector3 end, float radius, float t)
     {
-        //var color = _gradient.Evaluate(t);   
         var color = Color.red;
         var properties = new MaterialPropertyBlock();
         properties.SetColor("_Color", color);
-        //properties.SetTexture("_MainTex", null);
 
         var vector = end - start;
 

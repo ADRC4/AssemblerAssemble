@@ -95,7 +95,7 @@ public class RaycastCreate : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.V))
             {
                 buildUp = !buildUp;
-                MainController._toggleBuildUp = buildUp;
+                MainController._togglePath = buildUp;
             }
 
             if (buildUp)
